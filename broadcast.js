@@ -1,45 +1,38 @@
-require("http").globalAgent.maxSockets = Infinity;
 
-var d = require('domain').create()
 var restify = require('restify')
+var server = restify.createServer(
+{
+	
+});
 
-var rest = restify.createServer()
-var io = require('socket.io').listen(rest)
+var io = require('socket.io')(server);
 
-io.set('log level', 1);
+server.use(restify.bodyParser({ mapParams: true }));
+server.use(restify.queryParser())
+server.use(
+  function crossOrigin(req,res,next){
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "X-Requested-With");
+    return next();
+  }
+);
 
-rest.use(restify.bodyParser({ mapParams: true }));
-rest.use(restify.queryParser())
-
-d.on('error', function(err) {
-        console.log(err);
+var client_to_send = io.of("/state_changes").on('connection', function(socket) 
+{ 
+	console.log('client connect') 
 })
 
-var endPoint = "/state_changes"
+server.post('/state_change_broadcast', function(req, res, next) 
+{
+		res.header("Access-Control-Allow-Origin", "*")
+		res.header("Access-Control-Allow-Headers", "x-requested-with")
+		message = req.params.message
 
-d.run(function() {
-	var prod_client = io
-			.of(endPoint)
-			.on('connection', function(socket) {
-					console.log('client connect')
-			})
+		console.log("broadcast: " + message);
+		client_to_send.emit('new_states',  message);
 
-	rest.post('/state_change_broadcast', function(req, res, next) {
-
-			res.header("Access-Control-Allow-Origin", "*")
-			res.header("Access-Control-Allow-Headers", "x-requested-with")
-			message = req.params.message
-
-			console.log("broadcast: " + message)
-			client_to_send = prod_client
-
-			client_to_send.emit('new_states',  message)
-
-			res.send({"error": false })
-			next()
-	})
-
-	rest.listen(8081, function() {
-			console.log('socket listening')
-	})
+		res.send({"error": false })
+		next()
 })
+
+server.listen("8081");

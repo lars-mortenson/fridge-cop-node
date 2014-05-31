@@ -22,10 +22,8 @@ var client_to_send = io.of("/state_changes").on('connection', function(socket)
 	console.log('client connect') 
 })
 
-server.post('/state_change_broadcast', function(req, res, next) 
+server.post('/state_change_broadcast', function(req, res, next)
 {
-		res.header("Access-Control-Allow-Origin", "*")
-		res.header("Access-Control-Allow-Headers", "x-requested-with")
 		message = req.params.message
 
 		console.log("broadcast: " + message);
